@@ -10,6 +10,30 @@ namespace ApplicationDomainExample
 	{
 		static void Main(string[] args)
 		{
+			// v1
+			WriteLine("First example");
+			WriteLine("---");
+			V1();
+			WriteLine("\n");
+
+			// v2
+			WriteLine("Second example");
+			WriteLine("---");
+			V2();
+			WriteLine("\n");
+
+			// v3
+			WriteLine("Third example");
+			WriteLine("---");
+			V3();
+			WriteLine("\n");
+
+			WriteLine("The program has finished. Press any key to close...");
+			ReadKey();
+		}
+
+		private static void V3()
+		{
 			// permissions 
 			var perm = new PermissionSet(PermissionState.None);
 			perm.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
@@ -22,16 +46,10 @@ namespace ApplicationDomainExample
 
 			// other app domain which secured c:\
 			var securedAppDomain = AppDomain.CreateDomain("SecuredAppDomain", null, setup, perm);
-			//var thirdPartyType = typeof(ThirdPartyPackage);
-
-			//// you will see constructor log but 
-			//// you got System.Security.SecurityException now
-			//securedAppDomain.CreateInstanceAndUnwrap(thirdPartyType.Assembly.FullName, thirdPartyType.FullName);
-
+			
 			try
 			{
 				var thirdPartyType = typeof(ThirdPartyPackage);
-
 
 				// you got "System.Security.SecurityException" still but you unloaded the corresponding app domain now.
 				securedAppDomain.CreateInstanceAndUnwrap(thirdPartyType.Assembly.FullName, thirdPartyType.FullName);
@@ -45,22 +63,35 @@ namespace ApplicationDomainExample
 
 			// current app domain
 			var exampleClass = new ExampleClass();
+		}
 
-			/* 
-			 * The other example
-			 * 
-			AppDomain ad = AppDomain.CreateDomain("OtherAppDomain");
+		private static void V2()
+		{
+			var otherAppDomain = AppDomain.CreateDomain("OtherAppDomain");
 
 			var marshallByRefClassType = typeof(MarshallByRefClass);
 			var serializableClassType = typeof(SerializableClass);
 
-			MarshallByRefClass marshall = (MarshallByRefClass)ad.CreateInstanceAndUnwrap(marshallByRefClassType.Assembly.FullName, marshallByRefClassType.FullName);
-			SerializableClass serializable = (SerializableClass)ad.CreateInstanceAndUnwrap(serializableClassType.Assembly.FullName, serializableClassType.FullName);
+			var marshall = (MarshallByRefClass)otherAppDomain.CreateInstanceAndUnwrap(marshallByRefClassType.Assembly.FullName, marshallByRefClassType.FullName);
+			var serializable = (SerializableClass)otherAppDomain.CreateInstanceAndUnwrap(serializableClassType.Assembly.FullName, serializableClassType.FullName);
 
-			Console.WriteLine(marshall.WhatIsMyAppDomain());
-			Console.WriteLine(serializable.WhatIsMyAppDomain());*/
+			WriteLine(marshall.WhatIsMyAppDomain());
+			WriteLine(serializable.WhatIsMyAppDomain());
 
-			ReadKey();
+			AppDomain.Unload(otherAppDomain);
+		}
+
+		private static void V1()
+		{
+			// other app domain
+			var exampleAppDomain = AppDomain.CreateDomain("ExampleAppDomain");
+			var thirdPartyType = typeof(ThirdPartyPackage);
+			exampleAppDomain.CreateInstanceAndUnwrap(thirdPartyType.Assembly.FullName, thirdPartyType.FullName);
+
+			AppDomain.Unload(exampleAppDomain);
+
+			// current app domain
+			var exampleClass = new ExampleClass();
 		}
 	}
 
@@ -90,20 +121,20 @@ namespace ApplicationDomainExample
 		}
 	}
 
-	//[Serializable]
-	//public class SerializableClass
-	//{
-	//	public string WhatIsMyAppDomain()
-	//	{
-	//		return AppDomain.CurrentDomain.FriendlyName;
-	//	}
-	//}
+	[Serializable]
+	public class SerializableClass
+	{
+		public string WhatIsMyAppDomain()
+		{
+			return AppDomain.CurrentDomain.FriendlyName;
+		}
+	}
 
-	//public class MarshallByRefClass : MarshalByRefObject
-	//{
-	//	public string WhatIsMyAppDomain()
-	//	{
-	//		return AppDomain.CurrentDomain.FriendlyName;
-	//	}
-	//}
+	public class MarshallByRefClass : MarshalByRefObject
+	{
+		public string WhatIsMyAppDomain()
+		{
+			return AppDomain.CurrentDomain.FriendlyName;
+		}
+	}
 }
